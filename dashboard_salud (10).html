@@ -1,0 +1,906 @@
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Salud V2</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #fff5f9 0%, #ffe0ec 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            font-size: 2.2em;
+            color: #e91e63;
+            margin-bottom: 10px;
+        }
+
+        .day-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .day-indicator {
+            font-size: 1em;
+            color: #c2185b;
+            font-weight: 600;
+            min-width: 160px;
+            text-align: center;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: 2px solid #e91e63;
+            background: white;
+            color: #e91e63;
+            border-radius: 25px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+        }
+
+        .btn:hover {
+            background: #fce4ec;
+            transform: translateY(-2px);
+        }
+
+        .btn-water {
+            border-color: #1976d2;
+            color: #1976d2;
+        }
+
+        .btn-water:hover {
+            background: #e3f2fd;
+        }
+
+        .main-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .column {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(233, 30, 99, 0.15);
+        }
+
+        .card-title {
+            font-size: 1.2em;
+            color: #e91e63;
+            margin-bottom: 15px;
+            font-weight: 700;
+            border-bottom: 2px solid #f8bbd0;
+            padding-bottom: 10px;
+        }
+
+        /* NUTRICIÓN */
+        .meal-section {
+            margin-bottom: 15px;
+        }
+
+        .meal-title {
+            font-size: 0.95em;
+            font-weight: 600;
+            color: #c2185b;
+            margin-bottom: 8px;
+        }
+
+        .food-item {
+            background: #fce4ec;
+            padding: 8px;
+            border-radius: 8px;
+            margin-bottom: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85em;
+        }
+
+        .food-name {
+            flex: 1;
+        }
+
+        .food-calories {
+            background: #e91e63;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.8em;
+        }
+
+        .water-display {
+            background: linear-gradient(135deg, #e3f2fd, #f3e5f5);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .water-value {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: #1976d2;
+            margin: 15px 0 5px 0;
+        }
+
+        .water-chart-container {
+            position: relative;
+            height: 150px;
+            margin: 15px 0;
+        }
+
+        .calories-summary {
+            background: #fce4ec;
+            padding: 10px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+
+        .macros-bar {
+            background: #f0f0f0;
+            height: 8px;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 5px 0;
+        }
+
+        .macro-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b9d, #e91e63);
+        }
+
+        /* SUPLEMENTACIÓN */
+        .supplement-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background: #fce4ec;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .supplement-item input {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            margin-right: 10px;
+            accent-color: #e91e63;
+        }
+
+        .supplement-name {
+            flex: 1;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+
+        .supplement-item.checked {
+            background: #f8bbd0;
+            opacity: 0.6;
+        }
+
+        .supplement-item.checked .supplement-name {
+            text-decoration: line-through;
+        }
+
+        /* ESTADÍSTICAS */
+        .stats-input {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        .input-group input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #f8bbd0;
+            border-radius: 8px;
+            font-size: 0.9em;
+        }
+
+        .input-group button {
+            padding: 8px 12px;
+            background: #e91e63;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85em;
+        }
+
+        .input-group button:hover {
+            background: #c2185b;
+        }
+
+        .measurement {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .measurement input {
+            flex: 1;
+            padding: 6px;
+            border: 1px solid #f8bbd0;
+            border-radius: 6px;
+            font-size: 0.85em;
+        }
+
+        .stats-table {
+            width: 100%;
+            font-size: 0.85em;
+            margin: 10px 0;
+            border-collapse: collapse;
+        }
+
+        .stats-table th, .stats-table td {
+            padding: 6px;
+            text-align: left;
+            border-bottom: 1px solid #f8bbd0;
+        }
+
+        .stats-table th {
+            background: #fce4ec;
+            color: #c2185b;
+            font-weight: 600;
+        }
+
+        .weight-display {
+            background: #fce4ec;
+            padding: 12px;
+            border-radius: 10px;
+            text-align: center;
+            margin: 10px 0;
+            font-size: 0.9em;
+        }
+
+        .weight-value {
+            font-size: 1.4em;
+            font-weight: 700;
+            color: #e91e63;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 200px;
+            margin: 10px 0;
+        }
+
+        .water-buttons {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 1200px) {
+            .main-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🌸 Mi Dashboard de Salud 🌸</h1>
+        <div class="day-controls">
+            <button class="btn" onclick="previousDay()">← Anterior</button>
+            <div class="day-indicator" id="dayIndicator">Día 1 - 24 de abril</div>
+            <button class="btn" onclick="nextDay()">Siguiente →</button>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <!-- COLUMNA 1: NUTRICIÓN -->
+        <div class="column">
+            <div class="card">
+                <div class="card-title">🍽️ Nutrición</div>
+
+                <div class="water-display">
+                    <div style="color: #666; font-size: 0.85em;">💧 Agua</div>
+                    <div class="water-chart-container">
+                        <canvas id="waterChart"></canvas>
+                    </div>
+                    <div class="water-value" id="waterAmount">1750</div>
+                    <div style="color: #666; font-size: 0.75em; margin-bottom: 10px;">ml / 3200 ml</div>
+                    <div style="color: #1976d2; font-size: 0.8em; font-weight: 600; margin-bottom: 12px;">Te faltan: <span id="waterRemaining">1450</span> ml</div>
+                    <div class="water-buttons">
+                        <button class="btn btn-water" style="padding: 8px 12px; font-size: 0.8em;" onclick="addWater(250)">+250ml</button>
+                        <button class="btn btn-water" style="padding: 8px 12px; font-size: 0.8em;" onclick="addWater(500)">+500ml</button>
+                        <button class="btn btn-water" style="padding: 8px 12px; font-size: 0.8em;" onclick="resetWater()">Resetear</button>
+                    </div>
+                </div>
+
+                <div class="meal-section">
+                    <div class="meal-title">☀️ Desayuno</div>
+                    <div id="breakfastItems"></div>
+                </div>
+
+                <div class="meal-section">
+                    <div class="meal-title">🌞 Comida</div>
+                    <div id="lunchItems"></div>
+                </div>
+
+                <div class="meal-section">
+                    <div class="meal-title">🍴 Merienda</div>
+                    <div id="snackItems"></div>
+                </div>
+
+                <div class="calories-summary">
+                    <div style="color: #666; font-size: 0.8em; margin-bottom: 5px;">Calorías totales</div>
+                    <div style="font-size: 1.3em; font-weight: 700; color: #e91e63;" id="totalCalories">379</div>
+                    <div style="color: #999; font-size: 0.75em;">/ 1290 kcal</div>
+                    <div style="color: #e91e63; font-size: 0.8em; margin-top: 5px; font-weight: 600;">Te quedan: <span id="remaining">1021</span> kcal</div>
+                </div>
+
+                <div style="margin-top: 10px;">
+                    <div style="font-size: 0.8em; color: #999; margin-bottom: 5px;">Proteína</div>
+                    <div class="macros-bar"><div class="macro-fill" id="proteinBar" style="width: 29%"></div></div>
+                    <div style="font-size: 0.75em; color: #666;"><span id="proteinVal">32</span> / 152 g</div>
+
+                    <div style="font-size: 0.8em; color: #999; margin: 10px 0 5px 0;">Grasas</div>
+                    <div class="macros-bar"><div class="macro-fill" id="fatsBar" style="width: 12%"></div></div>
+                    <div style="font-size: 0.75em; color: #666;"><span id="fatsVal">5.8</span> / 37 g</div>
+
+                    <div style="font-size: 0.8em; color: #999; margin: 10px 0 5px 0;">Carbohidratos</div>
+                    <div class="macros-bar"><div class="macro-fill" id="carbsBar" style="width: 41%"></div></div>
+                    <div style="font-size: 0.75em; color: #666;"><span id="carbsVal">53</span> / 86 g</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- COLUMNA 2: SUPLEMENTACIÓN -->
+        <div class="column">
+            <div class="card">
+                <div class="card-title">💊 Suplementación</div>
+                <div id="supplementsList"></div>
+            </div>
+        </div>
+
+        <!-- COLUMNA 3: ESTADÍSTICAS -->
+        <div class="column">
+            <div class="card">
+                <div class="card-title">📊 Peso</div>
+                <div class="stats-input">
+                    <div class="input-group">
+                        <input type="number" id="weightInput" placeholder="Ej: 54.5" step="0.1" min="0">
+                        <button onclick="addWeight()">Añadir</button>
+                    </div>
+                </div>
+                <div class="weight-display">
+                    <div style="color: #666; font-size: 0.8em; margin-bottom: 5px;">Promedio de la semana</div>
+                    <div class="weight-value" id="weeklyWeight">--</div>
+                    <div style="color: #999; font-size: 0.75em;">kg</div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="weightChart"></canvas>
+                </div>
+                <table class="stats-table">
+                    <thead>
+                        <tr>
+                            <th>Día</th>
+                            <th>Peso</th>
+                        </tr>
+                    </thead>
+                    <tbody id="weightTable">
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <div class="card-title">📏 Medidas</div>
+                <div id="isMondayMessage" style="background: #fce4ec; padding: 10px; border-radius: 8px; text-align: center; margin-bottom: 10px; font-size: 0.85em; display: none;">
+                    📅 Hoy es lunes - Puedes actualizar medidas
+                </div>
+                <div id="isNotMondayMessage" style="background: #f0f0f0; padding: 10px; border-radius: 8px; text-align: center; margin-bottom: 10px; font-size: 0.85em;">
+                    📅 Las medidas se actualizan los lunes
+                </div>
+
+                <div class="measurement" id="measurementInputs" style="display: none;">
+                    <input type="number" id="chest" placeholder="Pecho" step="0.1" min="0">
+                    <input type="number" id="waist" placeholder="Cintura" step="0.1" min="0">
+                    <input type="number" id="hip" placeholder="Cadera" step="0.1" min="0">
+                    <input type="number" id="arm" placeholder="Brazo" step="0.1" min="0">
+                    <input type="number" id="thigh" placeholder="Muslo" step="0.1" min="0">
+                </div>
+
+                <button class="btn" id="measurementBtn" style="width: 100%; margin-bottom: 10px;" onclick="addMeasurement()">Guardar Medidas</button>
+
+                <table class="stats-table">
+                    <thead>
+                        <tr>
+                            <th style="font-size: 0.8em;">Semana</th>
+                            <th style="font-size: 0.8em;">Pecho</th>
+                            <th style="font-size: 0.8em;">Cintura</th>
+                            <th style="font-size: 0.8em;">Cadera</th>
+                        </tr>
+                    </thead>
+                    <tbody id="measurementTable">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const startDate = new Date(2026, 3, 24);
+        let currentDay = 0;
+
+        const data = {
+            0: {
+                water: 3250,
+                meals: {
+                    breakfast: [
+                        { name: 'Yogur Pastoret (125g)', calories: 95, protein: 4.5, fats: 0.5, carbs: 18 },
+                        { name: 'Plátano (114g)', calories: 100, protein: 1.3, fats: 0.3, carbs: 26 },
+                        { name: 'Café con leche (150ml)', calories: 70, protein: 4.7, fats: 3.5, carbs: 6 },
+                        { name: 'Polvo proteína (30g)', calories: 114, protein: 21, fats: 1.7, carbs: 3.3 }
+                    ],
+                    lunch: [
+                        { name: 'Ternera (180g)', calories: 280, protein: 48, fats: 9, carbs: 0 },
+                        { name: 'Queso cottage (150g)', calories: 165, protein: 28, fats: 4.5, carbs: 6 },
+                        { name: 'Boniato al horno (158g)', calories: 150, protein: 2.5, fats: 0.3, carbs: 34 },
+                        { name: 'Huevos hervidos (2)', calories: 155, protein: 13, fats: 11, carbs: 1 },
+                        { name: 'Aceite de oliva (1 cda)', calories: 90, protein: 0, fats: 10, carbs: 0 }
+                    ],
+                    snack: [
+                        { name: 'Proteína en polvo (30g)', calories: 114, protein: 21, fats: 1.7, carbs: 3.3 },
+                        { name: 'Zumo naranja natural (100ml)', calories: 45, protein: 0.7, fats: 0.2, carbs: 11 }
+                    ]
+                },
+                supplements: {
+                    'Focus': false,
+                    'Calm': false,
+                    'Vitamina D3+K2': false,
+                    'Omega-3 TG': false,
+                    'Creatina': false,
+                    'Colágeno Marino': false,
+                    'Sleep': false,
+                    'Proteína Whey': false
+                }
+            },
+            1: {
+                water: 0,
+                meals: {
+                    breakfast: [
+                        { name: 'Café con leche (150ml)', calories: 72, protein: 4.7, fats: 3.5, carbs: 6 },
+                        { name: 'YoPro yogur vainilla (120g)', calories: 115, protein: 11, fats: 2.5, carbs: 4.5 }
+                    ],
+                    lunch: [],
+                    snack: []
+                },
+                supplements: {
+                    'Focus': false,
+                    'Calm': false,
+                    'Vitamina D3+K2': false,
+                    'Omega-3 TG': false,
+                    'Creatina': false,
+                    'Colágeno Marino': false,
+                    'Sleep': false,
+                    'Proteína Whey': false
+                }
+            }
+        };
+
+        const day1 = {
+            1: {
+                water: 0,
+                meals: {
+                    breakfast: [
+                        { name: 'Café con leche (150ml)', calories: 70, protein: 5, fats: 3.5, carbs: 6 },
+                        { name: 'Yopro vainilla proteico (125g)', calories: 90, protein: 11, fats: 0.5, carbs: 9 },
+                        { name: 'Proteína en polvo (30g)', calories: 114, protein: 21, fats: 1.7, carbs: 3.3 }
+                    ],
+                    lunch: [],
+                    snack: []
+                },
+                supplements: {
+                    'Focus': false,
+                    'Calm': false,
+                    'Vitamina D3+K2': false,
+                    'Omega-3 TG': false,
+                    'Creatina': false,
+                    'Colágeno Marino': false,
+                    'Sleep': false,
+                    'Proteína Whey': false
+                }
+            }
+        };
+
+        Object.assign(data, day1);
+
+        const supplementOrder = [
+            { name: 'Focus' },
+            { name: 'Calm' },
+            { name: 'Vitamina D3+K2' },
+            { name: 'Omega-3 TG' },
+            { name: 'Creatina' },
+            { name: 'Colágeno Marino' },
+            { name: 'Sleep' },
+            { name: 'Proteína Whey' }
+        ];
+
+        const weights = {};
+        const measurements = {};
+        const goals = { calories: 1290, protein: 152, fats: 37, carbs: 86, water: 3200 };
+        let weightChart = null;
+        let waterChart = null;
+
+        function saveToLocalStorage() {
+            localStorage.setItem('healthDashboardV2', JSON.stringify({
+                data: data,
+                weights: weights,
+                measurements: measurements
+            }));
+        }
+
+        function loadFromLocalStorage() {
+            try {
+                localStorage.removeItem('healthDashboardV2');
+                const saved = localStorage.getItem('healthDashboardV2');
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    for (let key in parsed.data) {
+                        data[key] = parsed.data[key];
+                    }
+                    for (let key in parsed.weights) {
+                        weights[key] = parsed.weights[key];
+                    }
+                    for (let key in parsed.measurements) {
+                        measurements[key] = parsed.measurements[key];
+                    }
+                }
+            } catch (e) {
+                console.error('Error:', e);
+            }
+        }
+
+        function formatDate(dayIndex) {
+            const date = new Date(startDate);
+            date.setDate(date.getDate() + dayIndex);
+            const months = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+            return `${date.getDate()} de ${months[date.getMonth()]}`;
+        }
+
+        function getDayData(dayIndex) {
+            if (!data[dayIndex]) {
+                data[dayIndex] = {
+                    water: 0,
+                    meals: { breakfast: [], lunch: [], snack: [] },
+                    supplements: {}
+                };
+                supplementOrder.forEach(s => {
+                    data[dayIndex].supplements[s.name] = false;
+                });
+            }
+            return data[dayIndex];
+        }
+
+        function getDate(dayIndex) {
+            const date = new Date(startDate);
+            date.setDate(date.getDate() + dayIndex);
+            return date;
+        }
+
+        function isMondayInWeek(dayIndex) {
+            return getDate(dayIndex).getDay() === 1;
+        }
+
+        function updateUI() {
+            const dayData = getDayData(currentDay);
+            document.getElementById('dayIndicator').textContent = `Día ${currentDay + 1} - ${formatDate(currentDay)}`;
+
+            // Nutrición
+            const totals = { calories: 0, protein: 0, fats: 0, carbs: 0 };
+            Object.values(dayData.meals).forEach(meal => {
+                meal.forEach(item => {
+                    totals.calories += item.calories;
+                    totals.protein += item.protein;
+                    totals.fats += item.fats;
+                    totals.carbs += item.carbs;
+                });
+            });
+
+            document.getElementById('waterAmount').textContent = dayData.water;
+            document.getElementById('waterRemaining').textContent = Math.max(0, goals.water - dayData.water);
+            updateWaterChart(dayData.water);
+
+            document.getElementById('totalCalories').textContent = Math.round(totals.calories);
+            document.getElementById('remaining').textContent = Math.max(0, goals.calories - totals.calories);
+            document.getElementById('proteinVal').textContent = totals.protein.toFixed(1);
+            document.getElementById('fatsVal').textContent = totals.fats.toFixed(1);
+            document.getElementById('carbsVal').textContent = totals.carbs.toFixed(1);
+
+            document.getElementById('proteinBar').style.width = Math.min((totals.protein / goals.protein) * 100, 100) + '%';
+            document.getElementById('fatsBar').style.width = Math.min((totals.fats / goals.fats) * 100, 100) + '%';
+            document.getElementById('carbsBar').style.width = Math.min((totals.carbs / goals.carbs) * 100, 100) + '%';
+
+            // Meals
+            const breakfastHTML = dayData.meals.breakfast.length > 0 
+                ? dayData.meals.breakfast.map(item => `
+                    <div class="food-item">
+                        <span class="food-name">${item.name}</span>
+                        <span class="food-calories">${item.calories} kcal</span>
+                    </div>
+                `).join('')
+                : '<div style="color: #999; font-size: 0.85em;">Sin datos</div>';
+            document.getElementById('breakfastItems').innerHTML = breakfastHTML;
+
+            const lunchHTML = dayData.meals.lunch.length > 0 
+                ? dayData.meals.lunch.map(item => `
+                    <div class="food-item">
+                        <span class="food-name">${item.name}</span>
+                        <span class="food-calories">${item.calories} kcal</span>
+                    </div>
+                `).join('')
+                : '<div style="color: #999; font-size: 0.85em;">Sin datos</div>';
+            document.getElementById('lunchItems').innerHTML = lunchHTML;
+
+            const snackHTML = dayData.meals.snack && dayData.meals.snack.length > 0 
+                ? dayData.meals.snack.map(item => `
+                    <div class="food-item">
+                        <span class="food-name">${item.name}</span>
+                        <span class="food-calories">${item.calories} kcal</span>
+                    </div>
+                `).join('')
+                : '<div style="color: #999; font-size: 0.85em;">Sin datos</div>';
+            document.getElementById('snackItems').innerHTML = snackHTML;
+
+            // Supplements
+            const supplementsHTML = supplementOrder.map(s => `
+                <div class="supplement-item ${dayData.supplements[s.name] ? 'checked' : ''}">
+                    <input type="checkbox" ${dayData.supplements[s.name] ? 'checked' : ''} onchange="toggleSupplement('${s.name}')">
+                    <span class="supplement-name">${s.name}</span>
+                </div>
+            `).join('');
+            document.getElementById('supplementsList').innerHTML = supplementsHTML;
+
+            // Medidas
+            const isMonday = isMondayInWeek(currentDay);
+            document.getElementById('isMondayMessage').style.display = isMonday ? 'block' : 'none';
+            document.getElementById('isNotMondayMessage').style.display = isMonday ? 'none' : 'block';
+            document.getElementById('measurementInputs').style.display = isMonday ? 'flex' : 'none';
+            document.getElementById('measurementBtn').style.display = isMonday ? 'block' : 'none';
+
+            updateWeightUI();
+            updateMeasurementTable();
+        }
+
+        function updateWaterChart(waterAmount) {
+            const ctx = document.getElementById('waterChart');
+            if (!ctx) return;
+            
+            const waterPercent = Math.min((waterAmount / goals.water) * 100, 100);
+            const remaining = Math.max(0, 100 - waterPercent);
+
+            if (waterChart) {
+                waterChart.data.datasets[0].data = [waterPercent, remaining];
+                waterChart.update();
+            } else {
+                waterChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        datasets: [{
+                            data: [waterPercent, remaining],
+                            backgroundColor: ['#1976d2', '#e0e0e0'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } }
+                    }
+                });
+            }
+        }
+
+        function toggleSupplement(name) {
+            const dayData = getDayData(currentDay);
+            dayData.supplements[name] = !dayData.supplements[name];
+            saveToLocalStorage();
+        }
+
+        function addWater(ml) {
+            const dayData = getDayData(currentDay);
+            dayData.water += ml;
+            saveToLocalStorage();
+            updateUI();
+        }
+
+        function resetWater() {
+            const dayData = getDayData(currentDay);
+            dayData.water = 0;
+            saveToLocalStorage();
+            updateUI();
+        }
+
+        function addWeight() {
+            const input = document.getElementById('weightInput');
+            const weight = parseFloat(input.value);
+            if (isNaN(weight) || weight <= 0) return;
+
+            const dateKey = getDate(currentDay).toISOString().split('T')[0];
+            if (!weights[dateKey]) weights[dateKey] = [];
+            weights[dateKey].push(weight);
+            input.value = '';
+            saveToLocalStorage();
+            updateWeightUI();
+        }
+
+        function updateWeightUI() {
+            const dateKey = getDate(currentDay).toISOString().split('T')[0];
+            const dayWeights = weights[dateKey] || [];
+
+            let weeklyAvg = '--';
+            if (currentDay % 7 === 0) {
+                const weekStart = currentDay;
+                const weekEnd = Math.min(currentDay + 7, currentDay + 7);
+                let allWeights = [];
+                for (let i = weekStart; i < weekEnd; i++) {
+                    const key = getDate(i).toISOString().split('T')[0];
+                    if (weights[key]) {
+                        allWeights = allWeights.concat(weights[key]);
+                    }
+                }
+                if (allWeights.length > 0) {
+                    weeklyAvg = (allWeights.reduce((a, b) => a + b) / allWeights.length).toFixed(1);
+                }
+            }
+
+            document.getElementById('weeklyWeight').textContent = weeklyAvg;
+
+            const tableHTML = dayWeights.map((w, idx) => `
+                <tr>
+                    <td>${formatDate(currentDay)}</td>
+                    <td>${w.toFixed(1)} kg</td>
+                </tr>
+            `).join('');
+            document.getElementById('weightTable').innerHTML = tableHTML || '<tr><td colspan="2" style="text-align: center; color: #999;">Sin datos</td></tr>';
+
+            updateWeightChart();
+        }
+
+        function updateWeightChart() {
+            const ctx = document.getElementById('weightChart').getContext('2d');
+            const weekStart = currentDay - (currentDay % 7);
+            const labels = [];
+            const data = [];
+
+            for (let i = 0; i < 7; i++) {
+                const date = getDate(weekStart + i);
+                const dateKey = date.toISOString().split('T')[0];
+                labels.push(date.getDate());
+                const dayWeights = weights[dateKey] || [];
+                const avg = dayWeights.length > 0 ? dayWeights.reduce((a, b) => a + b) / dayWeights.length : null;
+                data.push(avg);
+            }
+
+            if (weightChart) {
+                weightChart.data.labels = labels;
+                weightChart.data.datasets[0].data = data;
+                weightChart.update();
+            } else {
+                weightChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Peso (kg)',
+                            data: data,
+                            borderColor: '#e91e63',
+                            backgroundColor: 'rgba(233, 30, 99, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4,
+                            pointBackgroundColor: '#e91e63',
+                            pointRadius: 5
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { beginAtZero: false, min: 50, max: 60 }
+                        }
+                    }
+                });
+            }
+        }
+
+        function addMeasurement() {
+            const chest = parseFloat(document.getElementById('chest').value);
+            const waist = parseFloat(document.getElementById('waist').value);
+            const hip = parseFloat(document.getElementById('hip').value);
+            const arm = parseFloat(document.getElementById('arm').value);
+            const thigh = parseFloat(document.getElementById('thigh').value);
+
+            if (isNaN(chest) || isNaN(waist) || isNaN(hip)) return;
+
+            const weekNum = Math.floor(currentDay / 7) + 1;
+            measurements[`week_${weekNum}`] = { chest, waist, hip, arm, thigh };
+
+            document.getElementById('chest').value = '';
+            document.getElementById('waist').value = '';
+            document.getElementById('hip').value = '';
+            document.getElementById('arm').value = '';
+            document.getElementById('thigh').value = '';
+
+            saveToLocalStorage();
+            updateMeasurementTable();
+        }
+
+        function updateMeasurementTable() {
+            const tableHTML = Object.entries(measurements)
+                .sort((a, b) => parseInt(a[0].split('_')[1]) - parseInt(b[0].split('_')[1]))
+                .map(([week, meas]) => `
+                <tr>
+                    <td>${week.replace('_', ' ')}</td>
+                    <td>${meas.chest.toFixed(1)}</td>
+                    <td>${meas.waist.toFixed(1)}</td>
+                    <td>${meas.hip.toFixed(1)}</td>
+                </tr>
+            `).join('');
+            document.getElementById('measurementTable').innerHTML = tableHTML || '<tr><td colspan="4" style="text-align: center; color: #999;">Sin datos</td></tr>';
+        }
+
+        function previousDay() {
+            if (currentDay > 0) {
+                currentDay--;
+                saveToLocalStorage();
+                updateUI();
+            }
+        }
+
+        function nextDay() {
+            currentDay++;
+            saveToLocalStorage();
+            updateUI();
+        }
+
+        loadFromLocalStorage();
+        updateUI();
+    </script>
+</body>
+</html>
